@@ -10,12 +10,12 @@ cp wallpaper-picker "$BIN/wallpaper-picker"
 cp wallpaper-on-start "$BIN/wallpaper-on-start"
 chmod +x "$BIN/wallpaper-picker" "$BIN/wallpaper-on-start"
 
-if [ -f "$CONFIG_DIR/config.sh" ]; then
-    echo "! Config already exists at $CONFIG_DIR/config.sh — skipping"
-    echo "  Check config.sh in this repo for reference"
+if [ -f "$CONFIG_DIR/config" ]; then
+    echo "! Config already exists at $CONFIG_DIR/config — skipping"
+    echo "  Check config in this repo for reference"
 else
-    cp config.sh "$CONFIG_DIR/config.sh"
-    echo "✓ Config copied — edit $CONFIG_DIR/config.sh before running"
+    cp config "$CONFIG_DIR/config"
+    echo "✓ Config copied — edit $CONFIG_DIR/config before running"
 fi
 
 echo "✓ Installed wallpaper-picker and wallpaper-on-start to $BIN"
