@@ -1,0 +1,148 @@
+#!/bin/bash
+source "$HOME/.config/wallpaperengine/config.sh"
+
+mkdir -p "$STATE_DIR"
+[ ! -f "$STATE" ] && echo '{"mode":"span","monitors":{}}' > "$STATE"
+
+# ── Helpers ────────────────────────────────────────────────────────────────
+monitor_ids() { printf '%s\n' "${MONITORS[@]}" | cut -d: -f1; }
+monitor_label() { printf '%s\n' "${MONITORS[@]}" | grep "^$1:" | cut -d: -f2; }
+monitor_count() { echo "${#MONITORS[@]}"; }
+
+get_preview() {
+  local dir="$WORKSHOP/$1"
+  if [ -f "$dir/preview.jpg" ]; then
+    chafa --size=80x40 --symbols=all --colors=256 "$dir/preview.jpg" 2>/dev/null
+  elif [ -f "$dir/preview.gif" ]; then
+    chafa --size=80x40 --symbols=all --colors=256 "$dir/preview.gif" 2>/dev/null
+  else
+    echo "[sin preview]"
+  fi
+}
+export -f get_preview
+export WORKSHOP
+
+wallpaper_list() {
+  for dir in "$WORKSHOP"/*/; do
+    local id title
+    id=$(basename "$dir")
+    title=$(jq -r '.title // "sin título"' "$dir/project.json" 2>/dev/null)
+    echo "$id $title"
+  done
+}
+
+pick_wallpaper() {
+  local prompt="${1:-Wallpaper}"
+  wallpaper_list | fzf \
+    --prompt="$prompt > " \
+    --preview='id=$(echo {} | cut -d" " -f1); get_preview "$id"' \
+    --preview-window=right:120:wrap \
+    --with-nth=2 \
+    --height=90% \
+    --border=rounded \
+    --info=inline \
+    | cut -d' ' -f1
+}
+
+apply_wallpaper() {
+  local new_state="$1"
+  local mode dp_ids dp_dirs
+
+  echo "$new_state" > "$STATE"
+  systemctl --user stop wallpaperengine.service 2>/dev/null
+  sleep 0.3
+
+  mode=$(echo "$new_state" | jq -r '.mode')
+
+  if [ "$mode" = "span" ]; then
+    local first_id monitors_span wallpaper_id
+    first_id=$(monitor_ids | head -n1)
+    wallpaper_id=$(echo "$new_state" | jq -r --arg m "$first_id" '.monitors[$m]')
+    monitors_span=$(monitor_ids | paste -sd,)
+
+    systemd-run --user --unit=wallpaperengine \
+      linux-wallpaperengine \
+      "${WE_ARGS[@]}" \
+      --fps "$FPS" \
+      --assets-dir "$ASSETS" \
+      --scaling fill --screen-span "$monitors_span" \
+      --bg "$WORKSHOP/$wallpaper_id/"
+  else
+    local CMD=(linux-wallpaperengine "${WE_ARGS[@]}" --fps "$FPS" --assets-dir "$ASSETS")
+    while IFS=: read -r mon_id _; do
+      local wid
+      wid=$(echo "$new_state" | jq -r --arg m "$mon_id" '.monitors[$m]')
+      [ -n "$wid" ] && [ "$wid" != "null" ] && [ -d "$WORKSHOP/$wid" ] && \
+        CMD+=(--scaling fill --screen-root "$mon_id" --bg "$WORKSHOP/$wid/")
+    done < <(printf '%s\n' "${MONITORS[@]}")
+    systemd-run --user --unit=wallpaperengine "${CMD[@]}"
+  fi
+}
+
+# ── Menú principal ─────────────────────────────────────────────────────────
+build_menu() {
+  echo "Todos los monitores (span)"
+  for entry in "${MONITORS[@]}"; do
+    local id label
+    id=$(echo "$entry" | cut -d: -f1)
+    label=$(echo "$entry" | cut -d: -f2)
+    echo "$id ($label)"
+  done
+  echo "─────────────────────"
+  echo "Reiniciar wallpaper"
+  echo "Reset servicio"
+}
+
+TARGET=$(build_menu | fzf \
+  --prompt="Acción > " \
+  --height=40% \
+  --border=rounded \
+  --info=hidden \
+  --no-preview)
+
+[ -z "$TARGET" ] && exit 0
+
+case "$TARGET" in
+  "Reset servicio")
+    systemctl --user reset-failed wallpaperengine.service
+    echo "✓ Servicio reseteado"
+    exit 0
+    ;;
+
+  "Reiniciar wallpaper")
+    bash "$HOME/.local/bin/wallpaper-on-start.sh"
+    echo "✓ Wallpaper reseteado"
+    exit 0
+    ;;
+
+  "Todos los monitores (span)")
+    selected=$(pick_wallpaper "Span")
+    [ -z "$selected" ] && exit 0
+    current=$(cat "$STATE")
+    new_state=$(echo "$current" | jq --arg id "$selected" '
+      .mode = "span" |
+      .monitors = (
+        .monitors | keys[] |= . 
+      ) |
+      reduce ("'"$(monitor_ids | tr '\n' ' ')"'" | split(" ")[]) as $m
+        (.; .monitors[$m] = $id)
+    ')
+    apply_wallpaper "$new_state"
+    echo "✓ Span aplicado: $selected"
+    ;;
+
+  "─────────────────────") exit 0 ;;
+
+  *)
+    # Es un monitor individual: "DP-1 (Izquierdo)"
+    mon_id=$(echo "$TARGET" | cut -d' ' -f1)
+    mon_label=$(monitor_label "$mon_id")
+    selected=$(pick_wallpaper "$mon_label")
+    [ -z "$selected" ] && exit 0
+    current=$(cat "$STATE")
+    new_state=$(echo "$current" | jq --arg id "$selected" --arg m "$mon_id" \
+      '.mode = "independent" | .monitors[$m] = $id')
+    apply_wallpaper "$new_state"
+    echo "✓ Wallpaper aplicado en $mon_label: $selected"
+    ;;
+esac

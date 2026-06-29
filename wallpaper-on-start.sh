@@ -1,0 +1,37 @@
+#!/bin/bash
+source "$HOME/.config/wallpaperengine/config.sh"
+
+# ── Arranque ───────────────────────────────────────────────────────────────
+[ ! -f "$STATE" ] && exit 0
+
+mode=$(jq -r '.mode // "span"' "$STATE")
+
+if [ "$mode" = "span" ]; then
+  # Toma el wallpaper del primer monitor
+  first_id=$(printf '%s\n' "${MONITORS[@]}" | cut -d: -f1 | head -n1)
+  wallpaper_id=$(jq -r --arg m "$first_id" '.monitors[$m] // empty' "$STATE")
+
+  [ -z "$wallpaper_id" ] || [ ! -d "$WORKSHOP/$wallpaper_id" ] && exit 0
+
+  monitors_span=$(printf '%s\n' "${MONITORS[@]}" | cut -d: -f1 | paste -sd,)
+
+  systemd-run --user --unit=wallpaperengine \
+    linux-wallpaperengine \
+    "${WE_ARGS[@]}" --fps "$FPS" \
+    --assets-dir "$ASSETS" \
+    --scaling fill --screen-span "$monitors_span" \
+    --bg "$WORKSHOP/$wallpaper_id/"
+else
+  CMD=(linux-wallpaperengine "${WE_ARGS[@]}" --fps "$FPS" --assets-dir "$ASSETS")
+
+  while IFS=: read -r mon_id _; do
+    wid=$(jq -r --arg m "$mon_id" '.monitors[$m] // empty' "$STATE")
+    [ -n "$wid" ] && [ -d "$WORKSHOP/$wid" ] && \
+      CMD+=(--scaling fill --screen-root "$mon_id" --bg "$WORKSHOP/$wid/")
+  done < <(printf '%s\n' "${MONITORS[@]}")
+
+  # Si no se agregó ningún monitor, salir
+  [ ${#CMD[@]} -eq $(( 4 + ${#WE_ARGS[@]} )) ] && exit 0
+
+  systemd-run --user --unit=wallpaperengine "${CMD[@]}"
+fi
