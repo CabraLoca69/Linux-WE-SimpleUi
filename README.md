@@ -2,7 +2,8 @@
 
 A terminal UI for [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine) that lets you browse and apply Wallpaper Engine wallpapers from the command line, with live previews and multi-monitor support.
 
-![preview](preview.png)
+![selector](assets/monitor-selector.png)
+![Wselector](assets/wallpaper-selector.png)
 
 ---
 
@@ -31,7 +32,7 @@ sudo apt install fzf chafa jq
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/youruser/wallpaper-engine-picker
+git clone https://github.com/CabraLoca69/Linux-WE-SimpleUi.git
 cd wallpaper-engine-picker
 ```
 
