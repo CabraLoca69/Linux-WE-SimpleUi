@@ -1,5 +1,5 @@
 #!/bin/bash
-source "$HOME/.config/wallpaperengine/config.sh"
+source "$HOME/.config/wallpaperengine/config"
 
 # ── Arranque ───────────────────────────────────────────────────────────────
 [ ! -f "$STATE" ] && exit 0

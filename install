@@ -1,0 +1,22 @@
+#!/bin/bash
+# Install wallpaper-engine-picker
+
+BIN="$HOME/.local/bin"
+CONFIG_DIR="$HOME/.config/wallpaperengine"
+
+mkdir -p "$BIN" "$CONFIG_DIR"
+
+cp wallpaper-picker "$BIN/wallpaper-picker"
+cp wallpaper-on-start "$BIN/wallpaper-on-start"
+chmod +x "$BIN/wallpaper-picker" "$BIN/wallpaper-on-start"
+
+if [ -f "$CONFIG_DIR/config.sh" ]; then
+    echo "! Config already exists at $CONFIG_DIR/config.sh — skipping"
+    echo "  Check config.sh in this repo for reference"
+else
+    cp config.sh "$CONFIG_DIR/config.sh"
+    echo "✓ Config copied — edit $CONFIG_DIR/config.sh before running"
+fi
+
+echo "✓ Installed wallpaper-picker and wallpaper-on-start to $BIN"
+echo "Please check and configure the config file on $CONFIG_DIR"

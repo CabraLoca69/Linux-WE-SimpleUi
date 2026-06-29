@@ -33,23 +33,17 @@ sudo apt install fzf chafa jq
 1. Clone the repository:
 ```bash
 git clone https://github.com/CabraLoca69/Linux-WE-SimpleUi.git
-cd wallpaper-engine-picker
+cd Linux-WE-SimpleUi
 ```
 
-2. Copy the scripts to your local bin:
+2. Run the installer:
 ```bash
-cp wallpaper-picker.sh ~/.local/bin/wallpaper-picker
-cp wallpaper-on-start.sh ~/.local/bin/wallpaper-on-start
-chmod +x ~/.local/bin/wallpaper-picker ~/.local/bin/wallpaper-on-start
+chmod +x ./install
+./install
+
 ```
 
-3. Copy the config file:
-```bash
-mkdir -p ~/.config/wallpaperengine
-cp config.sh ~/.config/wallpaperengine/config.sh
-```
-
-4. Edit the config file to match your setup (see [Configuration](#configuration)):
+3. Edit the config file to match your setup (see [Configuration](#configuration)):
 ```bash
 $EDITOR ~/.config/wallpaperengine/config.sh
 ```

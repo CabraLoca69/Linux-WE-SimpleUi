@@ -1,5 +1,5 @@
 #!/bin/bash
-source "$HOME/.config/wallpaperengine/config.sh"
+source "$HOME/.config/wallpaperengine/config"
 
 mkdir -p "$STATE_DIR"
 [ ! -f "$STATE" ] && echo '{"mode":"span","monitors":{}}' > "$STATE"
