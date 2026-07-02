@@ -45,14 +45,14 @@ chmod +x ./install
 
 3. Edit the config file to match your setup (see [Configuration](#configuration)):
 ```bash
-$EDITOR ~/.config/wallpaperengine/config.sh
+$EDITOR ~/.config/wallpaperengine/config
 ```
 
 ---
 
 ## Configuration
 
-All settings live in `~/.config/wallpaperengine/config.sh`. Both scripts source this file automatically.
+All settings live in `~/.config/wallpaperengine/config`. Both scripts source this file automatically.
 
 ```bash
 # ── Monitors ───────────────────────────────────────────────────────────────
