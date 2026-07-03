@@ -1,20 +1,36 @@
 #!/bin/bash
 source "$HOME/.config/wallpaperengine/config"
 
+if [ "$DEFAULT" = "True" ]; then
+  echo "✗ Config sin editar todavía ($HOME/.config/wallpaperengine/config)."
+  echo "  Editá MONITORS/ASSETS/WORKSHOP con tus datos reales, poné DEFAULT=False"
+  echo "  al principio del archivo, y volvé a correr wallpaper-picker."
+  exit 1
+fi
+
 mkdir -p "$STATE_DIR"
-[ ! -f "$STATE" ] && echo '{"mode":"span","monitors":{}}' > "$STATE"
+# -s (no -f): también cubre el caso de que el archivo exista pero esté vacío
+# (por ejemplo si una corrida anterior de jq falló y truncó el estado).
+[ ! -s "$STATE" ] && echo '{"mode":"span","monitors":{}}' > "$STATE"
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 monitor_ids() { printf '%s\n' "${MONITORS[@]}" | cut -d: -f1; }
 monitor_label() { printf '%s\n' "${MONITORS[@]}" | grep "^$1:" | cut -d: -f2; }
 monitor_count() { echo "${#MONITORS[@]}"; }
 
+# Array JSON de ids de monitor, construido con jq (no con split(" ") a mano
+# sobre texto de bash) para no arrastrar entradas vacías por espacios/saltos
+# de línea sueltos.
+monitor_ids_json() {
+  monitor_ids | jq -R -s 'split("\n") | map(select(length > 0))'
+}
+
 get_preview() {
   local dir="$WORKSHOP/$1"
-  if [ -f "$dir/preview.jpg" ]; then
-    chafa --size=80x40 --symbols=all --colors=256 "$dir/preview.jpg" 2>/dev/null
-  elif [ -f "$dir/preview.gif" ]; then
-    chafa --size=80x40 --symbols=all --colors=256 "$dir/preview.gif" 2>/dev/null
+  if [ -f "$dir/preview.gif" ]; then
+    chafa --size=60x20 --colors=256 "$dir/preview.gif" 2>/dev/null
+  elif [ -f "$dir/preview.jpg" ]; then
+    chafa --size=60x20 --colors=256 "$dir/preview.jpg" 2>/dev/null
   else
     echo "[sin preview]"
   fi
@@ -36,7 +52,7 @@ pick_wallpaper() {
   wallpaper_list | fzf \
     --prompt="$prompt > " \
     --preview='id=$(echo {} | cut -d" " -f1); get_preview "$id"' \
-    --preview-window=right:120:wrap \
+    --preview-window=right:60:wrap \
     --with-nth=2 \
     --height=90% \
     --border=rounded \
@@ -46,10 +62,14 @@ pick_wallpaper() {
 
 apply_wallpaper() {
   local new_state="$1"
-  local mode dp_ids dp_dirs
+  local mode
 
   echo "$new_state" > "$STATE"
   systemctl --user stop wallpaperengine.service 2>/dev/null
+  # Sin esto, una unidad transitoria anterior que terminó en 'failed' deja el
+  # nombre "ocupado" y systemd-run se niega a arrancar la próxima con
+  # "already loaded or has a fragment file", aunque el stop haya funcionado.
+  systemctl --user reset-failed wallpaperengine.service 2>/dev/null
   sleep 0.3
 
   mode=$(echo "$new_state" | jq -r '.mode')
@@ -81,7 +101,12 @@ apply_wallpaper() {
 
 # ── Menú principal ─────────────────────────────────────────────────────────
 build_menu() {
-  echo "Todos los monitores (span)"
+  # Con un solo monitor, "mismo fondo en todos" y "span" son equivalentes a
+  # elegir ese único monitor directo — no tiene sentido mostrarlas.
+  if [ "$(monitor_count)" -gt 1 ]; then
+    echo "Mismo fondo en todos los monitores"
+    echo "Span (una sola imagen estirada)"
+  fi
   for entry in "${MONITORS[@]}"; do
     local id label
     id=$(echo "$entry" | cut -d: -f1)
@@ -110,22 +135,36 @@ case "$TARGET" in
     ;;
 
   "Reiniciar wallpaper")
-    bash "$HOME/.local/bin/wallpaper-on-start.sh"
+    systemctl --user reset-failed wallpaperengine.service
+    bash "$HOME/.local/bin/wallpaper-on-start"
     echo "✓ Wallpaper reseteado"
     exit 0
     ;;
 
-  "Todos los monitores (span)")
+  "Mismo fondo en todos los monitores")
+    # Reusa el modo "independent": arma el mismo mapeo monitor->id que el
+    # caso de un monitor individual, solo que para TODOS los ids a la vez.
+    # apply_wallpaper() recorre $MONITORS igual en los dos casos, así que
+    # esto termina siendo N invocaciones de --screen-root con el mismo --bg,
+    # no una imagen estirada (para eso está la opción "Span" de abajo).
+    selected=$(pick_wallpaper "Todos")
+    [ -z "$selected" ] && exit 0
+    current=$(cat "$STATE")
+    new_state=$(echo "$current" | jq --arg id "$selected" --argjson ids "$(monitor_ids_json)" '
+      .mode = "independent" |
+      .monitors = ( [$ids[] as $m | {($m): $id}] | add // {} )
+    ')
+    apply_wallpaper "$new_state"
+    echo "✓ Mismo fondo aplicado en todos los monitores: $selected"
+    ;;
+
+  "Span (una sola imagen estirada)")
     selected=$(pick_wallpaper "Span")
     [ -z "$selected" ] && exit 0
     current=$(cat "$STATE")
-    new_state=$(echo "$current" | jq --arg id "$selected" '
+    new_state=$(echo "$current" | jq --arg id "$selected" --argjson ids "$(monitor_ids_json)" '
       .mode = "span" |
-      .monitors = (
-        .monitors | keys[] |= . 
-      ) |
-      reduce ("'"$(monitor_ids | tr '\n' ' ')"'" | split(" ")[]) as $m
-        (.; .monitors[$m] = $id)
+      .monitors = ( [$ids[] as $m | {($m): $id}] | add // {} )
     ')
     apply_wallpaper "$new_state"
     echo "✓ Span aplicado: $selected"

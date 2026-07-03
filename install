@@ -1,5 +1,12 @@
 #!/bin/bash
 # Install wallpaper-engine-picker
+source config
+if [ "$DEFAULT" = "True" ]; then
+  echo "✗ Config sin editar todavía."
+  echo "  Editá MONITORS/ASSETS/WORKSHOP con tus datos reales, poné DEFAULT=False"
+  echo "  al principio del archivo, y volvé a correr el instalador."
+  exit 1
+fi
 
 BIN="$HOME/.local/bin"
 CONFIG_DIR="$HOME/.config/wallpaperengine"

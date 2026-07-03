@@ -1,3 +1,9 @@
+# ── Antes de nada ────────────────────────────────────────────────────────────
+#Poner false para correr el instalador, tene en cuenta que
+#no editar bien este archivo puede hacer que el picker no funcione
+DEFAULT=True
+DEFAULT=False
+
 # ── Monitores ──────────────────────────────────────────────────────────────
 # para ver tus monitores y sus nombres: hyprctl monitors | grep Monitor
 # o con: xrandr | grep " connected"
@@ -19,11 +25,11 @@ WE_ARGS=(--silent --disable-mouse)
 # estos estan comunmente en el mismo disco que la carpeta de instalacion, unos directorios hacia atras
 # para encontrar tu SteamLibrary: steam -> configuración -> almacenamiento
 # el path suele ser /home/usuario/.steam/steam o /mnt/disco/SteamLibrary
-
-#incomplete example: */SteamLibrary/steamapps/common/wallpaper_engine/assets
+# usa paths absolutos $HOME/path
+#incomplete example: *$HOME/SteamLibrary/steamapps/common/wallpaper_engine/assets
 ASSETS=""
 
-#incomplete example: */SteamLibrary/steamapps/workshop/content/431960" <- id number on steam, same for everyone (i think)
+#incomplete example: *$HOME/SteamLibrary/steamapps/workshop/content/431960" <- id number on steam, same for everyone (i think)
 WORKSHOP=""
 
 #son los archivos de configuracion y recuperacion al encender del script, mover a discrecion
