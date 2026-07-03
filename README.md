@@ -45,16 +45,17 @@ down the line (wrong systemd unit state, wallpapers that silently don't
 apply, etc). Instead, the scripts check this flag right after sourcing the
 config and exit immediately with a clear message if it's still `True`.
 
+Once you've set `MONITORS`/`ASSETS`/`WORKSHOP` for your machine, change the
+first line of the config to:
+
+```bash
+DEFAULT=False
+```
+
 3. Run the installer:
 ```bash
 chmod +x ./install
 ./install
-```
-
-Once you've set `MONITORS`/`ASSETS`/`WORKSHOP` for your machine, change the
-first line of the config to:
-```bash
-DEFAULT=False
 ```
 
 ---
