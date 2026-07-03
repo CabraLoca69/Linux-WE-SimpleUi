@@ -9,8 +9,6 @@ if [ "$DEFAULT" = "True" ]; then
 fi
 
 mkdir -p "$STATE_DIR"
-# -s (no -f): también cubre el caso de que el archivo exista pero esté vacío
-# (por ejemplo si una corrida anterior de jq falló y truncó el estado).
 [ ! -s "$STATE" ] && echo '{"mode":"span","monitors":{}}' > "$STATE"
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -18,9 +16,6 @@ monitor_ids() { printf '%s\n' "${MONITORS[@]}" | cut -d: -f1; }
 monitor_label() { printf '%s\n' "${MONITORS[@]}" | grep "^$1:" | cut -d: -f2; }
 monitor_count() { echo "${#MONITORS[@]}"; }
 
-# Array JSON de ids de monitor, construido con jq (no con split(" ") a mano
-# sobre texto de bash) para no arrastrar entradas vacías por espacios/saltos
-# de línea sueltos.
 monitor_ids_json() {
   monitor_ids | jq -R -s 'split("\n") | map(select(length > 0))'
 }
@@ -66,9 +61,6 @@ apply_wallpaper() {
 
   echo "$new_state" > "$STATE"
   systemctl --user stop wallpaperengine.service 2>/dev/null
-  # Sin esto, una unidad transitoria anterior que terminó en 'failed' deja el
-  # nombre "ocupado" y systemd-run se niega a arrancar la próxima con
-  # "already loaded or has a fragment file", aunque el stop haya funcionado.
   systemctl --user reset-failed wallpaperengine.service 2>/dev/null
   sleep 0.3
 
@@ -142,11 +134,6 @@ case "$TARGET" in
     ;;
 
   "Mismo fondo en todos los monitores")
-    # Reusa el modo "independent": arma el mismo mapeo monitor->id que el
-    # caso de un monitor individual, solo que para TODOS los ids a la vez.
-    # apply_wallpaper() recorre $MONITORS igual en los dos casos, así que
-    # esto termina siendo N invocaciones de --screen-root con el mismo --bg,
-    # no una imagen estirada (para eso está la opción "Span" de abajo).
     selected=$(pick_wallpaper "Todos")
     [ -z "$selected" ] && exit 0
     current=$(cat "$STATE")
@@ -173,7 +160,7 @@ case "$TARGET" in
   "─────────────────────") exit 0 ;;
 
   *)
-    # Es un monitor individual: "DP-1 (Izquierdo)"
+    # Es un monitor individual: ej "DP-1 (Izquierdo)"
     mon_id=$(echo "$TARGET" | cut -d' ' -f1)
     mon_label=$(monitor_label "$mon_id")
     selected=$(pick_wallpaper "$mon_label")
