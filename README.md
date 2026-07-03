@@ -38,20 +38,18 @@ cd Linux-WE-SimpleUi
 ```bash
 $EDITOR ./config
 ```
-
-3. Run the installer:
-```bash
-chmod +x ./install
-./install
-```
-
-
 ⚠️ **All scripts refuse to run until you do this.** The shipped config starts
 with `DEFAULT=True` on purpose — running with empty `ASSETS`/`WORKSHOP` or a
 placeholder `MONITORS` list fails in confusing, hard-to-debug ways further
 down the line (wrong systemd unit state, wallpapers that silently don't
 apply, etc). Instead, the scripts check this flag right after sourcing the
 config and exit immediately with a clear message if it's still `True`.
+
+3. Run the installer:
+```bash
+chmod +x ./install
+./install
+```
 
 Once you've set `MONITORS`/`ASSETS`/`WORKSHOP` for your machine, change the
 first line of the config to:
