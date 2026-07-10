@@ -1,58 +1,59 @@
 # wallpaper-engine-picker
 
-A terminal UI for [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine) that lets you browse and apply Wallpaper Engine wallpapers from the command line, with live previews and multi-monitor support.
+Una interfaz de terminal para [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine) que te permite explorar y aplicar wallpapers de Wallpaper Engine desde la línea de comandos, con previews en vivo y soporte multi-monitor.
 
 ![selector](assets/monitor-selector.png)
 ![Wselector](assets/wallpaper-selector.png)
 
 ---
 
-## Dependencies
+## Dependencias
 
-- [Steam](https://store.steampowered.com/) with [Wallpaper Engine](https://store.steampowered.com/app/431960/Wallpaper_Engine/) installed and at least one wallpaper downloaded
-- [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine) — follow their README for installation
-- [`fzf`](https://github.com/junegunn/fzf) — fuzzy finder
-- [`chafa`](https://hpjansson.org/chafa/) — terminal image previews (1.10+ recommended for Kitty graphics protocol support)
-- [`jq`](https://jqlang.github.io/jq/) — JSON parsing
-- `systemd` (user session)
+- [Steam](https://store.steampowered.com/) con [Wallpaper Engine](https://store.steampowered.com/app/431960/Wallpaper_Engine/) instalado y al menos un wallpaper descargado
+- [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine) — seguí su README para instalarlo
+- [`fzf`](https://github.com/junegunn/fzf) — buscador
+- [`chafa`](https://hpjansson.org/chafa/) — previews de imágenes en terminal (se recomienda 1.10+ para soporte del protocolo de gráficos de Kitty)
+- [`jq`](https://jqlang.github.io/jq/) — parseo de JSON
+- `systemd` (sesión de usuario)
 
-Install dependencies on Arch:
+Instalar dependencias en Arch:
 ```bash
 paru -S fzf chafa jq
 ```
-On Ubuntu/Debian:
+En Ubuntu/Debian:
 ```bash
 sudo apt install fzf chafa jq
 ```
 
 ---
 
-## Installation
+## Instalación
 
-1. Clone the repository:
+1. Cloná el repositorio:
 ```bash
 git clone https://github.com/CabraLoca69/Linux-WE-SimpleUi.git
 cd Linux-WE-SimpleUi
 ```
-2. Edit the config file to match your setup (see [Configuration](#configuration)):
+2. Editá el archivo de configuración según tu setup (ver [Configuración](#configuración)):
 ```bash
 $EDITOR ./config
 ```
-⚠️ **All scripts refuse to run until you do this.** The shipped config starts
-with `DEFAULT=True` on purpose — running with empty `ASSETS`/`WORKSHOP` or a
-placeholder `MONITORS` list fails in confusing, hard-to-debug ways further
-down the line (wrong systemd unit state, wallpapers that silently don't
-apply, etc). Instead, the scripts check this flag right after sourcing the
-config and exit immediately with a clear message if it's still `True`.
+⚠️ **Todos los scripts se niegan a correr hasta que hagas esto.** El config que
+viene por defecto arranca con `DEFAULT=True` a propósito — correr con
+`ASSETS`/`WORKSHOP` vacíos o un `MONITORS` de placeholder falla de formas
+confusas y difíciles de debuggear más adelante (estado incorrecto del unit
+de systemd, wallpapers que no se aplican silenciosamente, etc). Por eso los
+scripts chequean este flag apenas cargan el config y salen inmediatamente
+con un mensaje claro si sigue en `True`.
 
-Once you've set `MONITORS`/`ASSETS`/`WORKSHOP` for your machine, change the
-first line of the config to:
+Una vez que configuraste `MONITORS`/`ASSETS`/`WORKSHOP` para tu máquina,
+cambiá la primera línea del config a:
 
 ```bash
 DEFAULT=False
 ```
 
-3. Run the installer:
+3. Corré el instalador:
 ```bash
 chmod +x ./install
 ./install
@@ -60,51 +61,51 @@ chmod +x ./install
 
 ---
 
-## Configuration
+## Configuración
 
-All settings live in `~/.config/wallpaperengine/config`. Both scripts source this file automatically.
+Toda la configuración vive en `~/.config/wallpaperengine/config`. Ambos scripts cargan este archivo automáticamente.
 
 ```bash
 # ── Antes de nada ──────────────────────────────────────────────────────────
 # Los scripts se niegan a correr mientras esto siga en True.
 DEFAULT=True
 
-# ── Monitors ───────────────────────────────────────────────────────────────
-# To find your monitor names: hyprctl monitors | grep Monitor
-# Or with: xrandr | grep " connected"
+# ── Monitores ──────────────────────────────────────────────────────────────
+# Para encontrar los nombres de tus monitores: hyprctl monitors | grep Monitor
+# O con: xrandr | grep " connected"
 MONITORS=(
   "DP-1:Left"
   # "DP-3:Right"
-  # "DP-2:Center"  # add or remove monitors as needed
+  # "DP-2:Center"  # agregá o sacá monitores según necesites
 )
 
 # ── Wallpaper Engine ───────────────────────────────────────────────────────
-# See: https://github.com/Almamu/linux-wallpaperengine/blob/main/README.md
-# Or run: linux-wallpaperengine --help
+# Ver: https://github.com/Almamu/linux-wallpaperengine/blob/main/README.md
+# O corré: linux-wallpaperengine --help
 FPS=30 
 WE_ARGS=(--silent --disable-mouse)
 
-# ── Paths ──────────────────────────────────────────────────────────────────
-# Usually found a few directories above your wallpaper_engine install folder:
+# ── Rutas ──────────────────────────────────────────────────────────────────
+# Usualmente unos directorios arriba de tu carpeta de instalación de wallpaper_engine:
 # */SteamLibrary/steamapps/common/wallpaper_engine/assets
 ASSETS=""
 # */SteamLibrary/steamapps/workshop/content/431960
 WORKSHOP=""
 
-# State files — where the picker saves the current wallpaper to restore on boot
+# Archivos de estado — donde el picker guarda el wallpaper actual para restaurarlo al bootear
 STATE_DIR="$HOME/.config/wallpaperengine"
 STATE="$STATE_DIR/last_wallpaper.json"
 ```
 
-> **Tip:** To find your Steam library path, open Steam → Settings → Storage.
+> **Tip:** Para encontrar la ruta de tu biblioteca de Steam, abrí Steam → Configuración → Almacenamiento.
 
-With a single monitor configured in `MONITORS`, the multi-monitor menu
-options (below) don't show up — picking your one monitor directly already
-covers that case.
+Con un solo monitor configurado en `MONITORS`, las opciones de menú
+multi-monitor (más abajo) no aparecen — elegir directamente ese único
+monitor ya cubre ese caso.
 
 ---
 
-## Usage
+## Uso
 
 ### Picker
 
@@ -112,27 +113,28 @@ covers that case.
 wallpaper-picker
 ```
 
-Opens a menu to:
-- **Set a different wallpaper per monitor** — pick a monitor, pick a wallpaper for it
-- **Mismo fondo en todos los monitores** — apply the *same* wallpaper to every monitor independently (each monitor renders its own instance via `--screen-root`; not a single stretched image)
-- **Span (una sola imagen estirada)** — a *single* wallpaper stretched across the combined geometry of all monitors via `--screen-span` (only shows up with more than one monitor configured)
-- Restart the wallpaper service
-- Reset a failed systemd service (clears a stuck `wallpaperengine.service` from a previous crashed run — needed before `systemd-run` will accept starting a new one under the same unit name)
+Abre un menú para:
+- **Elegir un wallpaper distinto por monitor** — elegís un monitor, elegís un wallpaper para ese monitor
+- **Mismo fondo en todos los monitores** — aplica el *mismo* wallpaper en cada monitor de forma independiente (cada monitor renderiza su propia instancia vía `--screen-root`; no es una sola imagen estirada)
+- **Span (una sola imagen estirada)** — un *único* wallpaper estirado a lo largo de la geometría combinada de todos los monitores vía `--screen-span` (solo aparece con más de un monitor configurado)
+- Reiniciar el servicio de wallpaper
+- Resetear un servicio systemd fallido (limpia un `wallpaperengine.service` trabado de una corrida anterior que crasheó — necesario antes de que `systemd-run` acepte iniciar uno nuevo bajo el mismo nombre de unit)
 
-While browsing wallpapers, a live preview renders in the right panel using
-`chafa`. Chafa auto-detects your terminal's capabilities and uses the best
-available rendering — Kitty's graphics protocol, Sixel, or ANSI/Unicode art
-— depending on what your terminal supports (Kitty, WezTerm, foot, Konsole,
-and others render actual images; other terminals fall back to ASCII/ANSI art).
+Mientras explorás wallpapers, se renderiza un preview en vivo en el panel
+derecho usando `chafa`. Chafa detecta automáticamente las capacidades de tu
+terminal y usa el mejor renderizado disponible — protocolo de gráficos de
+Kitty, Sixel, o arte ANSI/Unicode — según lo que soporte tu terminal (Kitty,
+WezTerm, foot, Konsole y otras renderizan imágenes reales; el resto cae al
+arte ASCII/ANSI de siempre).
 
-### Restore on login
+### Restaurar al iniciar sesión
 
-To restore your last wallpaper automatically when you log in, add this to your Hyprland config (or your compositor's equivalent):
+Para restaurar tu último wallpaper automáticamente al iniciar sesión, agregá esto a tu configuración de Hyprland (o el equivalente de tu compositor):
 
 ```ini
 exec-once = ~/.local/bin/wallpaper-on-start
 ```
-or in .lua configurations:
+o en configuraciones .lua:
 
 ```ini
 hl.on("hyprland.start", function()
@@ -141,57 +143,54 @@ end)
 ```
 ---
 
-## How it works
+## Cómo funciona
 
-The picker saves the current wallpaper selection to `~/.config/wallpaperengine/last_wallpaper.json` and runs `linux-wallpaperengine` as a systemd user service (`wallpaperengine.service`, transient, created via `systemd-run`). On login, `wallpaper-on-start` reads that file and restores the wallpaper.
+El picker guarda la selección actual de wallpaper en
+`~/.config/wallpaperengine/last_wallpaper.json` y corre
+`linux-wallpaperengine` como un servicio de usuario de systemd
+(`wallpaperengine.service`, transitorio, creado vía `systemd-run`). Al
+iniciar sesión, `wallpaper-on-start` lee ese archivo y restaura el
+wallpaper.
 
-Every time a wallpaper is applied, the picker stops the running service and
-clears its failed state (`systemctl --user reset-failed`) before starting a
-new one — a transient unit that exited with an error stays "loaded" under
-its name until explicitly cleared, and `systemd-run` refuses to reuse that
-name otherwise (`Unit wallpaperengine.service was already loaded or has a
-fragment file`).
+Cada vez que se aplica un wallpaper, el picker detiene el servicio en
+ejecución y limpia su estado fallido (`systemctl --user reset-failed`)
+antes de iniciar uno nuevo — un unit transitorio que terminó con error
+queda "cargado" bajo su nombre hasta que se limpia explícitamente, y
+`systemd-run` se niega a reusar ese nombre de otra forma (`Unit
+wallpaperengine.service was already loaded or has a fragment file`).
 
 ---
 
-## Troubleshooting
+## Solución de problemas
 
-**`linux-wallpaperengine` says "At least one background ID must be specified"** — the state file (`last_wallpaper.json`) has no valid entry for the monitor you're targeting, or the wallpaper id in it doesn't correspond to a real folder under `$WORKSHOP`. Check:
+**`linux-wallpaperengine` dice "At least one background ID must be specified"** — el archivo de estado (`last_wallpaper.json`) no tiene una entrada válida para el monitor que estás apuntando, o el id de wallpaper ahí no corresponde a una carpeta real bajo `$WORKSHOP`. Revisá:
 ```bash
 cat ~/.config/wallpaperengine/last_wallpaper.json
-ls "$WORKSHOP"   # confirm if the id really exists 
+ls "$WORKSHOP"   # confirmá si el id realmente existe
 ```
 
-**`Failed to start transient service unit: ... already loaded or has a fragment file`** — a previous run of `linux-wallpaperengine` crashed and left `wallpaperengine.service` stuck in a `failed` state. The picker already clears this automatically before applying a new wallpaper; if you're calling `apply_wallpaper`-adjacent code directly, run:
+**`Failed to start transient service unit: ... already loaded or has a fragment file`** — una corrida anterior de `linux-wallpaperengine` crasheó y dejó `wallpaperengine.service` trabado en estado `failed`. El picker ya limpia esto automáticamente antes de aplicar un wallpaper nuevo; si estás llamando código cercano a `apply_wallpaper` directamente, corré:
 ```bash
 systemctl --user reset-failed wallpaperengine.service
 ```
-**Preview shows nothing (blank) in a non-Kitty terminal, but the picker
-used to work fine** — `chafa` auto-detects which graphics protocol to use
-based on terminal environment variables (`$TERM`, `$KITTY_WINDOW_ID`, etc).
-If you launch one terminal from inside another (e.g. opening Alacritty from
-a Kitty session), those variables can get inherited by the child terminal
-even though it doesn't actually support the Kitty graphics protocol —
-chafa then tries to draw a Kitty-format image the terminal can't render,
-and the preview panel stays blank. Check with:
+
+**El preview no muestra nada (queda en blanco) en una terminal que no es Kitty, pero antes andaba bien** — `chafa` detecta automáticamente qué protocolo de gráficos usar en base a variables de entorno de la terminal (`$TERM`, `$KITTY_WINDOW_ID`, etc). Si abrís una terminal desde adentro de otra (por ejemplo, abrir Alacritty desde una sesión de Kitty), esas variables pueden quedar heredadas por la terminal hija aunque esta no soporte realmente el protocolo de gráficos de Kitty — chafa entonces intenta dibujar una imagen en formato Kitty que la terminal no puede renderizar, y el panel de preview queda en blanco. Verificá con:
 ```bash
 echo "KITTY_WINDOW_ID=[$KITTY_WINDOW_ID] TERM=$TERM"
 ```
-in the affected terminal. If it's non-empty and not actually Kitty, unset
-it before launching the picker (`unset KITTY_WINDOW_ID`), or launch your
-terminal fresh instead of nesting it inside another one.
+en la terminal afectada. Si no está vacío y en realidad no es Kitty, desactivalo antes de abrir el picker (`unset KITTY_WINDOW_ID`), o abrí tu terminal de cero en vez de anidarla dentro de otra.
 
-**Nothing happens, scripts exit immediately with a message about `DEFAULT`** — you haven't edited `~/.config/wallpaperengine/config` yet. See [Installation](#installation).
+**No pasa nada, los scripts salen inmediatamente con un mensaje sobre `DEFAULT`** — todavía no editaste `~/.config/wallpaperengine/config`. Ver [Instalación](#instalación).
 
 ---
 
-## Credits
+## Créditos
 
-- [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine) by Almamu — without this none of it works
-- [Wallpaper Engine](https://store.steampowered.com/app/431960/Wallpaper_Engine/) by Kristjan Skutta
+- [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine) por Almamu — sin esto nada de esto funciona
+- [Wallpaper Engine](https://store.steampowered.com/app/431960/Wallpaper_Engine/) por Kristjan Skutta
 
 ---
 
-## License
+## Licencia
 
 MIT
