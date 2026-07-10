@@ -120,11 +120,10 @@ Opens a menu to:
 - Reset a failed systemd service (clears a stuck `wallpaperengine.service` from a previous crashed run — needed before `systemd-run` will accept starting a new one under the same unit name)
 
 While browsing wallpapers, a live preview renders in the right panel using
-`chafa`. If you're running the picker inside [Kitty](https://sw.kovidgoyal.net/kitty/),
-previews use Kitty's graphics protocol for a full-resolution image instead of
-ASCII/ANSI art. This is detected automatically (`$TERM = xterm-kitty` and
-`$KITTY_WINDOW_ID` set) — no configuration needed. Any other terminal falls
-back to chafa's regular ANSI rendering.
+`chafa`. Chafa auto-detects your terminal's capabilities and uses the best
+available rendering — Kitty's graphics protocol, Sixel, or ANSI/Unicode art
+— depending on what your terminal supports (Kitty, WezTerm, foot, Konsole,
+and others render actual images; other terminals fall back to ASCII/ANSI art).
 
 ### Restore on login
 
@@ -168,16 +167,19 @@ ls "$WORKSHOP"   # confirm if the id really exists
 systemctl --user reset-failed wallpaperengine.service
 ```
 **Preview shows nothing (blank) in a non-Kitty terminal, but the picker
-used to work fine** — some terminal emulators can inherit `$KITTY_WINDOW_ID`
-from a parent process even when they're not Kitty themselves (e.g. launching
-another terminal from inside a Kitty session). The picker checks both
-`$KITTY_WINDOW_ID` *and* `$TERM = xterm-kitty` before using the Kitty
-graphics protocol, so this shouldn't normally happen — but if you see it,
-double check with:
+used to work fine** — `chafa` auto-detects which graphics protocol to use
+based on terminal environment variables (`$TERM`, `$KITTY_WINDOW_ID`, etc).
+If you launch one terminal from inside another (e.g. opening Alacritty from
+a Kitty session), those variables can get inherited by the child terminal
+even though it doesn't actually support the Kitty graphics protocol —
+chafa then tries to draw a Kitty-format image the terminal can't render,
+and the preview panel stays blank. Check with:
 ```bash
 echo "KITTY_WINDOW_ID=[$KITTY_WINDOW_ID] TERM=$TERM"
 ```
-in the affected terminal.
+in the affected terminal. If it's non-empty and not actually Kitty, unset
+it before launching the picker (`unset KITTY_WINDOW_ID`), or launch your
+terminal fresh instead of nesting it inside another one.
 
 **Nothing happens, scripts exit immediately with a message about `DEFAULT`** — you haven't edited `~/.config/wallpaperengine/config` yet. See [Installation](#installation).
 
