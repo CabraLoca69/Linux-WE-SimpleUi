@@ -33,17 +33,12 @@ get_preview() {
     return
   fi
 
-  if [ -n "$KITTY_WINDOW_ID" ] && [ "$TERM" = "xterm-kitty" ]; then
-    printf '\033_Ga=d,d=A\033\\'
-    chafa --animate off --format=kitty --size=60x30 "$img" 2>/dev/null
-  else
-    chafa --animate off --size=60x30 --colors=256 "$img" 2>/dev/null
-  fi
-}
+  printf '\033_Ga=d,d=A\033\\' 2>/dev/null
 
+  chafa --animate off --size=60x30 "$img" 2>/dev/null
+}
 export -f get_preview
 export WORKSHOP
-export KITTY_WINDOW_ID
 
 wallpaper_list() {
   for dir in "$WORKSHOP"/*/; do
