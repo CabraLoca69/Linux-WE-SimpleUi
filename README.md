@@ -12,7 +12,7 @@ A terminal UI for [linux-wallpaperengine](https://github.com/Almamu/linux-wallpa
 - [Steam](https://store.steampowered.com/) with [Wallpaper Engine](https://store.steampowered.com/app/431960/Wallpaper_Engine/) installed and at least one wallpaper downloaded
 - [linux-wallpaperengine](https://github.com/Almamu/linux-wallpaperengine) — follow their README for installation
 - [`fzf`](https://github.com/junegunn/fzf) — fuzzy finder
-- [`chafa`](https://hpjansson.org/chafa/) — terminal image previews
+- [`chafa`](https://hpjansson.org/chafa/) — terminal image previews (1.10+ recommended for Kitty graphics protocol support)
 - [`jq`](https://jqlang.github.io/jq/) — JSON parsing
 - `systemd` (user session)
 
@@ -119,7 +119,12 @@ Opens a menu to:
 - Restart the wallpaper service
 - Reset a failed systemd service (clears a stuck `wallpaperengine.service` from a previous crashed run — needed before `systemd-run` will accept starting a new one under the same unit name)
 
-While browsing wallpapers, a live preview renders in the right panel using `chafa`.
+While browsing wallpapers, a live preview renders in the right panel using
+`chafa`. If you're running the picker inside [Kitty](https://sw.kovidgoyal.net/kitty/),
+previews use Kitty's graphics protocol for a full-resolution image instead of
+ASCII/ANSI art. This is detected automatically (`$TERM = xterm-kitty` and
+`$KITTY_WINDOW_ID` set) — no configuration needed. Any other terminal falls
+back to chafa's regular ANSI rendering.
 
 ### Restore on login
 
@@ -162,6 +167,17 @@ ls "$WORKSHOP"   # confirm if the id really exists
 ```bash
 systemctl --user reset-failed wallpaperengine.service
 ```
+**Preview shows nothing (blank) in a non-Kitty terminal, but the picker
+used to work fine** — some terminal emulators can inherit `$KITTY_WINDOW_ID`
+from a parent process even when they're not Kitty themselves (e.g. launching
+another terminal from inside a Kitty session). The picker checks both
+`$KITTY_WINDOW_ID` *and* `$TERM = xterm-kitty` before using the Kitty
+graphics protocol, so this shouldn't normally happen — but if you see it,
+double check with:
+```bash
+echo "KITTY_WINDOW_ID=[$KITTY_WINDOW_ID] TERM=$TERM"
+```
+in the affected terminal.
 
 **Nothing happens, scripts exit immediately with a message about `DEFAULT`** — you haven't edited `~/.config/wallpaperengine/config` yet. See [Installation](#installation).
 

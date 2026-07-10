@@ -22,16 +22,28 @@ monitor_ids_json() {
 
 get_preview() {
   local dir="$WORKSHOP/$1"
+  local img=""
+
   if [ -f "$dir/preview.gif" ]; then
-    chafa --size=60x20 --colors=256 "$dir/preview.gif" 2>/dev/null
+    img="$dir/preview.gif"
   elif [ -f "$dir/preview.jpg" ]; then
-    chafa --size=60x20 --colors=256 "$dir/preview.jpg" 2>/dev/null
+    img="$dir/preview.jpg"
   else
     echo "[sin preview]"
+    return
+  fi
+
+  if [ -n "$KITTY_WINDOW_ID" ] && [ "$TERM" = "xterm-kitty" ]; then
+    printf '\033_Ga=d,d=A\033\\'
+    chafa --animate off --format=kitty --size=60x30 "$img" 2>/dev/null
+  else
+    chafa --animate off --size=60x30 --colors=256 "$img" 2>/dev/null
   fi
 }
+
 export -f get_preview
 export WORKSHOP
+export KITTY_WINDOW_ID
 
 wallpaper_list() {
   for dir in "$WORKSHOP"/*/; do
